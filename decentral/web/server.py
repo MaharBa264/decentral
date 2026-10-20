@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlparse
 from decentral.catalog.repository import CatalogRepository
 from decentral.catalog.schema import CatalogValidationError, MAX_SNAPSHOT_BYTES
 from decentral.importers.local_loader import load_snapshot_bytes, load_snapshot_file
+from decentral.importers.metadata_package import validate_metadata_package, PostgresMetadataPackageAdapter
 
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
@@ -58,6 +59,11 @@ class DecentralHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/relationships":
             entity = parse_qs(parsed.query).get("entity", [None])[0]
             return self._send_json(200, {"relationships": self.repository.relationships(entity)})
+        if parsed.path == "/api/erd":
+            qs = parse_qs(parsed.query)
+            schema = qs.get("schema", [None])[0]
+            query = qs.get("query", [""])[0]
+            return self._send_json(200, self.repository.erd_graph(schema=schema, query=query))
         if parsed.path in ("/", "/index.html"):
             return self._static("index.html", "text/html; charset=utf-8")
         if parsed.path == "/app.js":
@@ -83,6 +89,22 @@ class DecentralHandler(BaseHTTPRequestHandler):
 
 
 def load_repository(path):
+    # Support loading either decentral.catalog/v1 or decentral.metadata-package/v1
+    if os.path.getsize(path) > 50 * 1024 * 1024:
+        raise CatalogValidationError("local snapshot exceeds the 50 MiB limit")
+    with open(path, "rb") as handle:
+        payload = handle.read()
+    try:
+        data = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        raise CatalogValidationError("file must be UTF-8 JSON")
+
+    fmt = data.get("format")
+    if fmt == "decentral.metadata-package/v1":
+        pkg = validate_metadata_package(data)
+        adapter = PostgresMetadataPackageAdapter()
+        snap = adapter.to_snapshot(pkg)
+        return CatalogRepository(snap, package=pkg)
     return CatalogRepository(load_snapshot_file(path))
 
 

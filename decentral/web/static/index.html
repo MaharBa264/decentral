@@ -1,6 +1,101 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Explorador de catálogo sintético de Decentral"><title>Decentral · Catálogo sintético</title><link rel="stylesheet" href="/styles.css"></head>
-<body><header><h1>Decentral</h1><p id="snapshot">Cargando catálogo…</p></header><main>
-<aside aria-label="Entidades del catálogo"><label for="search">Buscar entidades</label><input id="search" type="search" placeholder="nombre o descripción"><ul id="entities" aria-live="polite"></ul></aside>
-<section aria-label="Detalle de entidad"><div id="detail"><p>Seleccioná una entidad para ver sus columnas.</p></div><h2>Relaciones cercanas</h2><div id="diagram" aria-label="Diagrama de relaciones"></div></section>
-</main><template id="entity-template"><li><button type="button"></button></li></template><script src="/app.js"></script></body></html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explorador ERD interactivo y catálogo de esquemas de Decentral">
+  <title>Decentral · Explorador ERD interactivo</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-main">
+      <h1>Decentral</h1>
+      <span class="header-tag">ERD Explorer H2</span>
+    </div>
+    <div class="header-meta">
+      <p id="snapshot">Cargando catálogo…</p>
+      <div id="coverage-banner" class="coverage-banner hidden" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <nav class="toolbar" aria-label="Controles del explorador ERD">
+    <div class="toolbar-group">
+      <label for="schema-filter">Esquema:</label>
+      <select id="schema-filter" aria-label="Filtrar por esquema">
+        <option value="">(Todos los esquemas)</option>
+      </select>
+    </div>
+
+    <div class="toolbar-group search-group">
+      <label for="search">Buscar:</label>
+      <input id="search" type="search" placeholder="Buscar esquema, tabla, vista, columna, descripción…" aria-label="Búsqueda de metadatos">
+    </div>
+
+    <div class="toolbar-group view-toggles">
+      <label for="kind-filter">Tipo:</label>
+      <select id="kind-filter" aria-label="Filtrar por tipo de relación">
+        <option value="">Todas (tablas y vistas)</option>
+        <option value="table">Sólo tablas</option>
+        <option value="view">Sólo vistas</option>
+      </select>
+    </div>
+
+    <div class="toolbar-group canvas-actions">
+      <button type="button" id="btn-zoom-in" title="Aumentar zoom" aria-label="Aumentar zoom">＋</button>
+      <button type="button" id="btn-zoom-out" title="Disminuir zoom" aria-label="Disminuir zoom">－</button>
+      <button type="button" id="btn-zoom-reset" title="Restablecer vista" aria-label="Restablecer vista">100%</button>
+      <button type="button" id="btn-layout" title="Reorganizar fichas" aria-label="Reorganizar fichas">Reorganizar</button>
+    </div>
+  </nav>
+
+  <main>
+    <aside aria-label="Índice de entidades y fichas">
+      <div class="aside-header">
+        <h2>Entidades</h2>
+        <span id="entities-count" class="counter">0</span>
+      </div>
+      <ul id="entities" aria-live="polite"></ul>
+    </aside>
+
+    <section id="erd-canvas-container" class="canvas-container" aria-label="Área de dibujo ERD">
+      <div class="canvas-controls-overlay">
+        <span id="zoom-indicator">100%</span>
+        <span id="erd-instructions">Arrastre para mover lienzo/fichas · Rueda para zoom · Clic para seleccionar</span>
+      </div>
+
+      <div id="erd-viewport" class="erd-viewport">
+        <svg id="erd-svg-layer" class="erd-svg-layer" aria-hidden="true"></svg>
+        <div id="erd-cards-layer" class="erd-cards-layer"></div>
+      </div>
+    </section>
+
+    <aside id="inspector-panel" class="inspector-panel" aria-label="Ficha de detalle de entidad" aria-live="polite">
+      <div class="inspector-header">
+        <h2 id="inspector-title">Detalle</h2>
+        <button type="button" id="btn-close-inspector" aria-label="Cerrar detalle">✕</button>
+      </div>
+      <div id="inspector-content">
+        <p class="placeholder-text">Seleccioná una tabla o vista en el lienzo o en el índice para inspeccionar su ficha técnica.</p>
+      </div>
+      <div id="inspector-relations-section">
+        <h3>Relaciones y claves foráneas</h3>
+        <div id="diagram" aria-label="Diagrama de relaciones">
+          <p class="placeholder-text">Sin entidad seleccionada.</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <template id="entity-template">
+    <li>
+      <button type="button" class="entity-item-btn">
+        <span class="entity-kind-badge"></span>
+        <span class="entity-label-text"></span>
+      </button>
+    </li>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>
