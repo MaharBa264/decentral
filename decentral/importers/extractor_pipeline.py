@@ -50,6 +50,15 @@ def convert_batch(batch_dir, batch_definition):
         with open(path) as handle: data=json.load(handle)
         if data.get("query_id") != entry.get("id") or data.get("query_sha256") != entry.get("query_sha256") or data.get("record_count") != len(data.get("rows",[])) or not isinstance(data.get("columns"),list): raise CatalogValidationError("payload provenance or truncation check failed")
         payloads[entry["id"]]=data
+    # A large inventory arrives as deterministic pages (for example columns_p001).
+    # All pages must have identical headers; their rows are concatenated only after
+    # each individual manifest/hash/count check above has succeeded.
+    for query in REQUIRED + OPTIONAL:
+        pages=[payloads[key] for key in sorted(payloads) if key == query or key.startswith(query + "_p")]
+        if pages:
+            headers=pages[0]["columns"]
+            if any(page["columns"] != headers for page in pages): raise CatalogValidationError("paged payload headers differ")
+            payloads[query]=dict(pages[0], rows=sum((page["rows"] for page in pages), []), record_count=sum(page["record_count"] for page in pages))
     missing=[q for q in REQUIRED if q not in payloads]
     if missing: raise CatalogValidationError("required metadata queries absent: "+", ".join(missing))
     coverage={q:("confirmed" if q in payloads and payloads[q]["rows"] else ("absent_checked" if q in payloads else "not_investigated")) for q in REQUIRED+OPTIONAL}
