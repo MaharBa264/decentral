@@ -4,7 +4,7 @@ import os
 import tempfile
 import unittest
 
-from decentral.importers.extractor_pipeline import convert_batch
+from decentral.importers.extractor_pipeline import convert_batch, _parse_timestamp, _nullable
 
 
 def sha(path):
@@ -12,6 +12,13 @@ def sha(path):
 
 
 class PipelineTests(unittest.TestCase):
+    def test_accepts_strict_iso_fraction_and_zone(self):
+        self.assertIsNotNone(_parse_timestamp("2026-10-20T13:47:39.115Z"))
+        self.assertIsNotNone(_parse_timestamp("2026-10-20T13:47:39+03:00"))
+        with self.assertRaises(Exception): _parse_timestamp("2026-10-20 13:47:39")
+    def test_accepts_only_boolean_or_observed_numeric_nullable(self):
+        self.assertFalse(_nullable(0)); self.assertTrue(_nullable(1)); self.assertTrue(_nullable(True))
+        with self.assertRaises(Exception): _nullable("YES")
     def test_converts_observed_batch_shape_and_reports_coverage(self):
         with tempfile.TemporaryDirectory() as directory:
             rows = {"schemas": [["demo"]], "relations": [["demo", "accounts", "table", "synthetic"]], "columns": [["demo", "accounts", "id", "uuid", False, "synthetic"]]}
