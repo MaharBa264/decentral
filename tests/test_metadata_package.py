@@ -17,7 +17,7 @@ class MetadataPackageTests(unittest.TestCase):
         self.assertEqual(["demo.accounts","demo.account_events"],[x["name"] for x in snapshot["entities"]])
         self.assertEqual("primary",snapshot["entities"][0]["columns"][0]["key"])
         self.assertEqual("foreign",snapshot["entities"][1]["columns"][0]["key"])
-        self.assertEqual("demo.accounts",snapshot["relationships"][0]["to_entity"])
+        self.assertEqual([],snapshot["relationships"])
 
     def test_rejects_tampering_and_unknown_target(self):
         changed=copy.deepcopy(package()); changed["source"]="tampered"

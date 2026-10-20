@@ -105,8 +105,8 @@ class PostgresMetadataPackageAdapter(CatalogExtractor):
             indexes = list(relation["indexes"])
             if relation["primary_key"]: indexes.append({"name": relation["primary_key"]["name"], "columns": relation["primary_key"]["columns"], "unique": True, "provenance": relation["primary_key"]["provenance"]})
             entities.append({"name": name, "label": name, "description": relation["kind"] + ": " + relation["description"], "provenance": relation["provenance"], "columns": [{"name": c["name"], "type": c["type"], "nullable": c["nullable"], "key": "primary" if c["name"] in primary else ("foreign" if c["name"] in foreign else "none"), "description": c["description"], "provenance": c["provenance"]} for c in relation["columns"]], "indexes": indexes})
-            for fk in relation["foreign_keys"]:
-                for source, target in zip(fk["columns"], fk["ref_columns"]): relationships.append({"from_entity": name, "from_column": source, "to_entity": fk["ref_schema"] + "." + fk["ref_relation"], "to_column": target, "cardinality": "one-to-many", "provenance": fk["provenance"]})
+            # Catalog v1 has no representation for FK cardinality or composite edges.
+            # Do not visualize either as independent one-to-many relationships.
         snapshot = {"format": "decentral.catalog/v1", "snapshot_id": package["package_id"], "generated_at": package["generated_at"], "source": package["source"], "content_sha256": "", "entities": entities, "relationships": relationships}
         snapshot["content_sha256"] = content_hash(snapshot)
         return validate_snapshot(snapshot)

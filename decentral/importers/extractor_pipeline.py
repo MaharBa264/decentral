@@ -6,6 +6,7 @@ from datetime import datetime
 
 from decentral.catalog.schema import CatalogValidationError
 from decentral.importers.metadata_package import package_hash, validate_metadata_package
+from decentral.importers.constraint_mapping import apply_constraints
 
 REQUIRED = ("schemas", "relations", "columns")
 OPTIONAL = ("primary_keys", "foreign_keys", "indexes")
@@ -74,6 +75,7 @@ def convert_batch(batch_dir, batch_definition):
         if type(c["nullable"]) is not bool: raise CatalogValidationError("nullable must be boolean")
         target["columns"].append({"name":c["name"],"type":c["type"],"nullable":c["nullable"],"description":c.get("description") or "metadata column","provenance":_provenance("confirmed","columns")})
     if any(not r["columns"] for r in relations): raise CatalogValidationError("relation has no confirmed columns")
+    apply_constraints(relations, _records(payloads.get("primary_keys", {"columns":[],"rows":[]})), _records(payloads.get("foreign_keys", {"columns":[],"rows":[]})), _records(payloads.get("indexes", {"columns":[],"rows":[]})), _provenance("confirmed", "constraints"))
     package={"format":"decentral.metadata-package/v1","package_id":"batch-"+manifest["run_id"],"generated_at":manifest["ended_at"],"source":"authorized PostgreSQL metadata batch","content_sha256":"","schemas":schemas,"relations":relations}
     package["content_sha256"]=package_hash(package)
     return validate_metadata_package(package),coverage
