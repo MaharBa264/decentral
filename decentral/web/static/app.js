@@ -86,7 +86,7 @@
       snapshotEl.textContent = (meta.package_id || meta.snapshot_id) + ' · ' + meta.source;
       if (meta.coverage && meta.coverage.foreign_keys_external_targets) {
         var ext = meta.coverage.foreign_keys_external_targets;
-        coverageBannerEl.textContent = 'Cobertura FK externa parcial: ' + ext.rows + ' relaciones pendientes de lote.';
+        coverageBannerEl.textContent = 'Cobertura FK externa parcial: ' + ext.rows + ' referencias pendientes de lote.';
         coverageBannerEl.classList.remove('hidden');
       }
     }).catch(function (err) {

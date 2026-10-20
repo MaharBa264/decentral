@@ -113,18 +113,26 @@ class ErdExplorerTests(unittest.TestCase):
         coverage = {
             "foreign_keys_external_targets": {
                 "state": "partial",
-                "rows": 5,
-                "resolution": "batch"
+                "rows": 128,
+                "resolution": "include referenced relations in a later authorized metadata batch"
             }
         }
         adapter = PostgresMetadataPackageAdapter()
         snapshot = adapter.to_snapshot(pkg)
         repo = CatalogRepository(snapshot, package=pkg, coverage=coverage)
 
+        # Verify metadata endpoint propagation
+        meta = repo.metadata()
+        self.assertIn("coverage", meta)
+        self.assertEqual("partial", meta["coverage"]["foreign_keys_external_targets"]["state"])
+        self.assertEqual(128, meta["coverage"]["foreign_keys_external_targets"]["rows"])
+
         graph = repo.erd_graph()
         self.assertEqual(["analytics", "sales"], graph["schemas"])
         self.assertEqual(3, len(graph["nodes"]))
         self.assertEqual(1, len(graph["edges"]))
+        self.assertEqual(128, graph["coverage"]["external_targets"]["rows"])
+        self.assertEqual("partial", graph["coverage"]["external_targets"]["state"])
 
         edge = graph["edges"][0]
         self.assertEqual("sales.orders->sales.customers:fk_orders_customer_composite", edge["id"])
@@ -133,6 +141,27 @@ class ErdExplorerTests(unittest.TestCase):
         self.assertEqual(["tenant_id", "customer_id"], edge["ref_columns"])
         self.assertEqual("unknown", edge["cardinality"])
         self.assertEqual("partial", edge["coverage"])
+
+    def test_load_repository_propagates_sidecar_coverage(self):
+        import tempfile
+        from decentral.web.server import load_repository
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            pkg = synthetic_package()
+            pkg_path = os.path.join(tmp_dir, "pkg.json")
+            cov_path = os.path.join(tmp_dir, "pkg.coverage.json")
+            with open(pkg_path, "w") as f:
+                json.dump(pkg, f)
+            with open(cov_path, "w") as f:
+                json.dump({
+                    "foreign_keys_external_targets": {
+                        "state": "partial",
+                        "rows": 128
+                    }
+                }, f)
+
+            repo = load_repository(pkg_path)
+            self.assertEqual(128, repo.metadata()["coverage"]["foreign_keys_external_targets"]["rows"])
+            self.assertEqual("partial", repo.erd_graph()["coverage"]["external_targets"]["state"])
 
     def test_erd_search_by_schema_table_view_column_and_description(self):
         pkg = synthetic_package()

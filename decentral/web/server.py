@@ -104,7 +104,23 @@ def load_repository(path):
         pkg = validate_metadata_package(data)
         adapter = PostgresMetadataPackageAdapter()
         snap = adapter.to_snapshot(pkg)
-        return CatalogRepository(snap, package=pkg)
+
+        coverage = None
+        # Check if coverage sidecar or embedded coverage is provided
+        sidecar_candidates = [
+            os.path.splitext(path)[0] + ".coverage.json",
+            os.path.join(os.path.dirname(path), "coverage.json")
+        ]
+        for candidate in sidecar_candidates:
+            if os.path.isfile(candidate):
+                try:
+                    with open(candidate, "rb") as cov_handle:
+                        coverage = json.loads(cov_handle.read().decode("utf-8"))
+                    break
+                except Exception:
+                    pass
+
+        return CatalogRepository(snap, package=pkg, coverage=coverage)
     return CatalogRepository(load_snapshot_file(path))
 
 
