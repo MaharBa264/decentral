@@ -1,0 +1,29 @@
+import hashlib
+import json
+import os
+import tempfile
+import unittest
+
+from decentral.importers.extractor_pipeline import convert_batch
+
+
+def sha(path):
+    with open(path, "rb") as handle: return hashlib.sha256(handle.read()).hexdigest()
+
+
+class PipelineTests(unittest.TestCase):
+    def test_converts_observed_batch_shape_and_reports_coverage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rows = {"schemas": [["demo"]], "relations": [["demo", "accounts", "table", "synthetic"]], "columns": [["demo", "accounts", "id", "uuid", False, "synthetic"]]}
+            headers = {"schemas": ["schema"], "relations": ["schema", "name", "kind", "description"], "columns": ["schema", "relation", "name", "type", "nullable", "description"]}
+            results = []
+            for key in rows:
+                payload = {"schema_version":1,"source":"synthetic","query_id":key,"query_sha256":"q-"+key,"captured_at":"2026-10-20T00:00:00Z","sheet":"data","columns":headers[key],"rows":rows[key],"record_count":len(rows[key])}
+                name = key + ".json"; path = os.path.join(directory, name)
+                with open(path, "w") as handle: json.dump(payload, handle)
+                results.append({"id":key,"status":"ok","query_sha256":"q-"+key,"json":name,"json_sha256":sha(path)})
+            manifest = {"schema_version":1,"run_id":"synthetic","source":"synthetic","started_at":"2026-10-20T00:00:00Z","ended_at":"2026-10-20T00:01:00Z","batch_sha256":"x","query_count":3,"results":results,"status":"ok"}
+            with open(os.path.join(directory, "manifest.json"), "w") as handle: json.dump(manifest, handle)
+            package, coverage = convert_batch(directory)
+            self.assertEqual("demo", package["schemas"][0]["name"])
+            self.assertEqual("not_investigated", coverage["foreign_keys"])

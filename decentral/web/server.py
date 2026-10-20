@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlparse
 
 from decentral.catalog.repository import CatalogRepository
 from decentral.catalog.schema import CatalogValidationError, MAX_SNAPSHOT_BYTES
-from decentral.importers.local_loader import load_snapshot_bytes
+from decentral.importers.local_loader import load_snapshot_bytes, load_snapshot_file
 
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
@@ -83,8 +83,7 @@ class DecentralHandler(BaseHTTPRequestHandler):
 
 
 def load_repository(path):
-    with open(path, "rb") as handle:
-        return CatalogRepository(load_snapshot_bytes(handle.read()))
+    return CatalogRepository(load_snapshot_file(path))
 
 
 def main():
