@@ -1,0 +1,48 @@
+{
+  "format": "decentral.catalog/v1",
+  "snapshot_id": "synthetic-demo-2026-10-20",
+  "generated_at": "2026-10-20T00:00:00Z",
+  "source": "fixture sintetico local; no representa sistemas externos",
+  "content_sha256": "8d3b61c0c0ca5e7a502ee67a0c684ed7b5e3d7dc850d60489434bc0c05503512",
+  "entities": [
+    {
+      "name": "demo_accounts",
+      "label": "Cuentas de demostracion",
+      "description": "Entidades sinteticas para probar la navegacion del catalogo.",
+      "provenance": {"status": "declarada", "source": "fixture H0", "evidence": "Definida manualmente para la demostracion."},
+      "columns": [
+        {"name": "account_id", "type": "uuid", "nullable": false, "key": "primary", "description": "Identificador sintetico de cuenta.", "provenance": {"status": "declarada", "source": "fixture H0", "evidence": "Clave primaria de ejemplo."}},
+        {"name": "display_name", "type": "varchar(120)", "nullable": false, "key": "none", "description": "Etiqueta de demostracion.", "provenance": {"status": "hipotesis", "source": "fixture H0", "evidence": "Campo ficticio para explorar tipos."}}
+      ],
+      "indexes": [{"name": "pk_demo_accounts", "columns": ["account_id"], "unique": true, "provenance": {"status": "declarada", "source": "fixture H0", "evidence": "Indice sintetico de clave primaria."}}]
+    },
+    {
+      "name": "demo_projects",
+      "label": "Proyectos de demostracion",
+      "description": "Coleccion sintetica vinculada a una cuenta de ejemplo.",
+      "provenance": {"status": "corroborada", "source": "fixture H0", "evidence": "Relacion de fixture verificada por test."},
+      "columns": [
+        {"name": "project_id", "type": "uuid", "nullable": false, "key": "primary", "description": "Identificador sintetico de proyecto.", "provenance": {"status": "declarada", "source": "fixture H0", "evidence": "Clave primaria de ejemplo."}},
+        {"name": "account_id", "type": "uuid", "nullable": false, "key": "foreign", "description": "Referencia sintetica a demo_accounts.", "provenance": {"status": "corroborada", "source": "fixture H0", "evidence": "Relacion incluida en este fixture."}},
+        {"name": "project_name", "type": "varchar(160)", "nullable": false, "key": "none", "description": "Nombre ficticio de proyecto.", "provenance": {"status": "hipotesis", "source": "fixture H0", "evidence": "Campo ficticio para mostrar una hipotesis."}}
+      ],
+      "indexes": [{"name": "idx_demo_projects_account", "columns": ["account_id"], "unique": false, "provenance": {"status": "corroborada", "source": "fixture H0", "evidence": "Indice de ejemplo consistente con la relacion."}}]
+    },
+    {
+      "name": "demo_events",
+      "label": "Eventos de demostracion",
+      "description": "Eventos sinteticos asociados a un proyecto de ejemplo.",
+      "provenance": {"status": "hipotesis", "source": "fixture H0", "evidence": "Modelo ficticio para el diagrama inicial."},
+      "columns": [
+        {"name": "event_id", "type": "bigint", "nullable": false, "key": "primary", "description": "Identificador sintetico de evento.", "provenance": {"status": "declarada", "source": "fixture H0", "evidence": "Clave primaria de ejemplo."}},
+        {"name": "project_id", "type": "uuid", "nullable": false, "key": "foreign", "description": "Referencia sintetica a demo_projects.", "provenance": {"status": "corroborada", "source": "fixture H0", "evidence": "Relacion incluida en este fixture."}},
+        {"name": "occurred_at", "type": "timestamp", "nullable": false, "key": "none", "description": "Instante ficticio del evento.", "provenance": {"status": "hipotesis", "source": "fixture H0", "evidence": "Campo ficticio para visualizar tipos."}}
+      ],
+      "indexes": [{"name": "idx_demo_events_project", "columns": ["project_id"], "unique": false, "provenance": {"status": "corroborada", "source": "fixture H0", "evidence": "Indice de ejemplo consistente con la relacion."}}]
+    }
+  ],
+  "relationships": [
+    {"from_entity": "demo_projects", "from_column": "account_id", "to_entity": "demo_accounts", "to_column": "account_id", "cardinality": "one-to-many", "provenance": {"status": "corroborada", "source": "fixture H0", "evidence": "Relacion sintetica definida por el fixture."}},
+    {"from_entity": "demo_events", "from_column": "project_id", "to_entity": "demo_projects", "to_column": "project_id", "cardinality": "one-to-many", "provenance": {"status": "hipotesis", "source": "fixture H0", "evidence": "Relacion ficticia mostrada como hipotesis."}}
+  ]
+}

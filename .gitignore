@@ -1,0 +1,37 @@
+# Runtime and local configuration
+.env
+.env.*
+!.env.example
+.envrc
+*.log
+logs/
+data/
+uploads/
+snapshots/private/
+DECENTRAL_ENCARGO_INICIAL_CODEX.md
+private-notes/
+
+# Source-system artifacts: never commit them to this public repository.
+*.xlsx
+*.xls
+*.csv
+*.ndjson
+source-auth/
+storage-state*.json
+auth-state*.json
+cookies.json
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.venv/
+venv/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/

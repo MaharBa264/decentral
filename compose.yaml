@@ -1,0 +1,13 @@
+services:
+  decentral:
+    build: .
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    expose:
+      - "8080"
+    # Intentionally no `ports`: a future deployment may add a separate proxy.
