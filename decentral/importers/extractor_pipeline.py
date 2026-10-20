@@ -26,12 +26,16 @@ def _records(payload):
     return [dict(zip(payload["columns"], row)) for row in payload["rows"]]
 
 
-def convert_batch(batch_dir):
+def convert_batch(batch_dir, batch_definition):
+    root = os.path.realpath(batch_dir)
+    if os.path.islink(os.path.join(batch_dir, "manifest.json")):
+        raise CatalogValidationError("manifest symlinks are not accepted")
     try:
         with open(os.path.join(batch_dir, "manifest.json")) as handle: manifest = json.load(handle)
     except (IOError, ValueError): raise CatalogValidationError("missing or invalid batch manifest")
     required = {"schema_version","run_id","source","started_at","ended_at","batch_sha256","query_count","results","status"}
-    if set(manifest) != required or manifest["schema_version"] != 1 or manifest["status"] not in ("ok", "completed") or manifest["query_count"] != len(manifest["results"]): raise CatalogValidationError("invalid or incomplete manifest")
+    if set(manifest) != required or manifest["schema_version"] != 1 or manifest["status"] != "complete" or manifest["query_count"] != len(manifest["results"]): raise CatalogValidationError("invalid or incomplete manifest")
+    if os.path.islink(batch_definition) or _sha(batch_definition) != manifest["batch_sha256"]: raise CatalogValidationError("batch definition hash mismatch")
     try:
         for value in (manifest["started_at"], manifest["ended_at"]):
             datetime.strptime(value.replace("Z", "+0000").replace("+00:00", "+0000"), "%Y-%m-%dT%H:%M:%S%z")
@@ -42,7 +46,7 @@ def convert_batch(batch_dir):
         name = entry.get("json")
         if not isinstance(name, str) or os.path.basename(name) != name: raise CatalogValidationError("unsafe payload path")
         path=os.path.join(batch_dir,name)
-        if not os.path.isfile(path) or _sha(path) != entry.get("json_sha256"): raise CatalogValidationError("payload hash mismatch")
+        if os.path.islink(path) or os.path.commonpath((root, os.path.realpath(path))) != root or not os.path.isfile(path) or _sha(path) != entry.get("json_sha256"): raise CatalogValidationError("payload hash mismatch")
         with open(path) as handle: data=json.load(handle)
         if data.get("query_id") != entry.get("id") or data.get("query_sha256") != entry.get("query_sha256") or data.get("record_count") != len(data.get("rows",[])) or not isinstance(data.get("columns"),list): raise CatalogValidationError("payload provenance or truncation check failed")
         payloads[entry["id"]]=data
@@ -58,7 +62,8 @@ def convert_batch(batch_dir):
     for c in _records(payloads["columns"]):
         target=lookup.get((c.get("schema"),c.get("relation")))
         if not target: raise CatalogValidationError("column references unknown relation")
-        target["columns"].append({"name":c["name"],"type":c["type"],"nullable":bool(c["nullable"]),"description":c.get("description") or "metadata column","provenance":_provenance("confirmed","columns")})
+        if type(c["nullable"]) is not bool: raise CatalogValidationError("nullable must be boolean")
+        target["columns"].append({"name":c["name"],"type":c["type"],"nullable":c["nullable"],"description":c.get("description") or "metadata column","provenance":_provenance("confirmed","columns")})
     if any(not r["columns"] for r in relations): raise CatalogValidationError("relation has no confirmed columns")
     package={"format":"decentral.metadata-package/v1","package_id":"batch-"+manifest["run_id"],"generated_at":manifest["ended_at"],"source":"authorized PostgreSQL metadata batch","content_sha256":"","schemas":schemas,"relations":relations}
     package["content_sha256"]=package_hash(package)

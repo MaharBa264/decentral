@@ -22,8 +22,10 @@ class PipelineTests(unittest.TestCase):
                 name = key + ".json"; path = os.path.join(directory, name)
                 with open(path, "w") as handle: json.dump(payload, handle)
                 results.append({"id":key,"status":"ok","query_sha256":"q-"+key,"json":name,"json_sha256":sha(path)})
-            manifest = {"schema_version":1,"run_id":"synthetic","source":"synthetic","started_at":"2026-10-20T00:00:00Z","ended_at":"2026-10-20T00:01:00Z","batch_sha256":"x","query_count":3,"results":results,"status":"ok"}
+            definition = os.path.join(directory, "batch.json")
+            with open(definition, "w") as handle: json.dump({"synthetic":True}, handle)
+            manifest = {"schema_version":1,"run_id":"synthetic","source":"synthetic","started_at":"2026-10-20T00:00:00Z","ended_at":"2026-10-20T00:01:00Z","batch_sha256":sha(definition),"query_count":3,"results":results,"status":"complete"}
             with open(os.path.join(directory, "manifest.json"), "w") as handle: json.dump(manifest, handle)
-            package, coverage = convert_batch(directory)
+            package, coverage = convert_batch(directory, definition)
             self.assertEqual("demo", package["schemas"][0]["name"])
             self.assertEqual("not_investigated", coverage["foreign_keys"])
